@@ -1,6 +1,7 @@
 from torch.utils.data import DataLoader
 from src.data_prep import prepare_data
 from src.dataset import CarPriceDataset
+from src.model import CarPriceModel
 
 
 def main():
@@ -28,12 +29,17 @@ def main():
     val_loader = DataLoader(val_ds, batch_size=2048, shuffle=False)
     test_loader = DataLoader(test_ds, batch_size=2048, shuffle=False)
 
+    cat_cardinalities = [len(data["cat_maps"][col]) for col in data["cat_maps"]]
+
+    model = CarPriceModel(
+        num_numeric=data["x_train_num"].shape[1],
+        cat_cardinalities=cat_cardinalities
+    )
+
     x_num, x_cat, y = next(iter(train_loader))
+    preds = model(x_num, x_cat)
 
-    print("x_num:", x_num.shape)
-    print("x_cat:", x_cat.shape)
-    print("y:", y.shape)
-
+    print("preds shape:", preds.shape)
 
 if __name__ == "__main__":
     main()
