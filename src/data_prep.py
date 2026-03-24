@@ -134,12 +134,12 @@ def prepare_data(path):
     y_test = y_test.to_numpy(dtype=np.float32)
 
     return {
-        "X_train_num": x_train_num,
-        "X_val_num": x_val_num,
-        "X_test_num": x_test_num,
-        "X_train_cat": x_train_cat,
-        "X_val_cat": x_val_cat,
-        "X_test_cat": x_test_cat,
+        "x_train_num": x_train_num,
+        "x_val_num": x_val_num,
+        "x_test_num": x_test_num,
+        "x_train_cat": x_train_cat,
+        "x_val_cat": x_val_cat,
+        "x_test_cat": x_test_cat,
         "y_train": y_train,
         "y_val": y_val,
         "y_test": y_test,
