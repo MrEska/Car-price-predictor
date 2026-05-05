@@ -4,9 +4,16 @@ from torch import nn
 
 
 class CarPriceModel(nn.Module):
-    def __init__(self, num_numeric, cat_cardinalities):
+    def __init__(
+        self,
+        num_numeric,
+        cat_cardinalities,
+        hidden_dims=(256, 128, 64),
+        dropout=0.2,
+    ):
         super().__init__()
 
+        # Dobieramy rozmiar embeddingu dla każdej kolumny kategorycznej.
         emb_dims = [
             min(16, max(4, int(np.ceil(np.log2(cardinality + 1)))))
             for cardinality in cat_cardinalities
@@ -19,25 +26,32 @@ class CarPriceModel(nn.Module):
 
         input_dim = num_numeric + sum(emb_dims)
 
-        self.mlp = nn.Sequential(
-            nn.Linear(input_dim, 256),
-            nn.ReLU(),
-            nn.BatchNorm1d(256),
-            nn.Dropout(0.2),
+        layers = []
+        prev_dim = input_dim
 
-            nn.Linear(256, 128),
-            nn.ReLU(),
-            nn.BatchNorm1d(128),
-            nn.Dropout(0.2),
+        for hidden_dim in hidden_dims:
+            layers.append(nn.Linear(prev_dim, hidden_dim))
+            layers.append(nn.ReLU())
+            layers.append(nn.BatchNorm1d(hidden_dim))
+            layers.append(nn.Dropout(dropout))
+            prev_dim = hidden_dim
 
-            nn.Linear(128, 64),
-            nn.ReLU(),
+        layers.append(nn.Linear(prev_dim, 1))
 
-            nn.Linear(64, 1)
-        )
+        self.mlp = nn.Sequential(*layers)
 
     def forward(self, x_num, x_cat):
-        cat_embs = [emb(x_cat[:, i]) for i, emb in enumerate(self.embeddings)]
+        # Każdą kolumnę kategoryczną przepuszczamy przez jej embedding.
+        cat_embs = [
+            emb(x_cat[:, i])
+            for i, emb in enumerate(self.embeddings)
+        ]
+
+        # Łączymy cechy numeryczne i embeddingi w jeden wektor.
         x = torch.cat([x_num] + cat_embs, dim=1)
+
+        # Przepuszczamy przez MLP.
         out = self.mlp(x)
+
+        # Z [batch_size, 1] robimy [batch_size].
         return out.squeeze(1)
